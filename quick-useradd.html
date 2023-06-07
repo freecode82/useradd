@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>useradd</title>
+<style>
+	.w-btn-green {
+    	background-color: skyblue;
+		padding: 10px 30px;
+	}
+	</style>
+	<script>
+		window.onload = function() {
+			document.getElementById("rightlist").style.display = 'none';
+			document.getElementById("addright").style.display = 'none';
+			prd = document.getElementById("serversel_0");
+			dev = document.getElementById("serversel_1");
+			
+			prd.onclick = () => { document.getElementById("rightlist").style.display = ''; }
+			dev.onclick = () => { document.getElementById("addright").style.display = ''; }
+		}
+	</script>
+</head>
+	
+<body>
+<!-- <div class="setting">
+    <input type="button" class="w-btn-green" value="Setting" >
+</div> -->
+서버 선택
+<p>
+	  <label>
+	    <input type="radio" name="serversel" value="prd" id="serversel_0">
+	    prd(quickbuild)</label>
+	  <br>
+	  <label>
+	    <input type="radio" name="serversel" value="dev" id="serversel_1">
+	    dev(quickbuild-tmp-dev)</label>
+	  <br>
+</p>
+권한 목록
+<p>
+<div id="rightlist">
+	<select multiple></select>
+	<div class="add">
+		<input type="button" value="Add" >
+	</div>
+</div>
+</p>
+선택된 권한
+<p>
+	<div id="addright">
+		<select multiple></select>
+	</div>
+</p>
+계정 정보
+
+</body>
+</html>

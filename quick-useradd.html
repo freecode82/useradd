@@ -12,22 +12,112 @@
 	}
 	</style>
 	<script>
-		window.onload = function() {
-			document.getElementById("rightlist").style.display = 'none';
-			document.getElementById("addright").style.display = 'none';
+		start = function() {
 			prd = document.getElementById("serversel_0");
 			dev = document.getElementById("serversel_1");
+			rightlist = document.getElementById("rightlist");
+			addright = document.getElementById("addright");
+			selRight = document.getElementById("right-option")
+			selAdd = document.getElementById("add-option");
+			addButton = document.getElementById("add-button");
+			delButton = document.getElementById("del-button");
+			rightlist.style.display = 'none';
+			addright.style.display = 'none';
 			
-			prd.onclick = () => { document.getElementById("rightlist").style.display = ''; }
-			dev.onclick = () => { document.getElementById("addright").style.display = ''; }
+			
+			prd.onclick = function() {
+				//groupsXmlData = null;
+				selRight.options.length = 0;
+				
+				fetch('/getgroup', {
+					method: 'POST',
+					headers: {'Content-Type':'application/json'},
+					body: JSON.stringify({type: 'prd'}),
+				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+					console.log(data.value);
+					//groupsXmlData = data.value;
+					let xmlParser = new DOMParser();
+					let xmlDoc = xmlParser.parseFromString(data.value, "text/xml");
+					let nodes = xmlDoc.getElementsByTagName("com.pmease.quickbuild.model.Group");
+					//let names = xmlDoc.querySelectorAll("#com.pmease.quickbuild.model.Group name");
+					//console.log(names);
+					//names.forEach(na => {
+					//	console.log(na);
+					//console.log(nodes.length);
+					//})
+					for(let subj of nodes) {
+						//console.log(subj.getElementsByTagName("name")[0].childNodes[0].nodeValue);
+						//console.log(subj.textContent);
+						var objOption = document.createElement("option");
+						objOption.text = subj.getElementsByTagName("name")[0].childNodes[0].nodeValue;
+    					objOption.value = rightlist.length+1;
+    					selRight.options.add(objOption);
+					}
+					//console.log(value);
+				});
+				
+				rightlist.style.display = '';
+			};
+			
+			dev.onclick = function() {
+				selRight.options.length = 0;
+				
+				fetch('/getgroup', {
+					method: 'POST',
+					headers: {'Content-Type':'application/json'},
+					body: JSON.stringify({type: 'prd'}),
+				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+					console.log(data.value);
+					
+					let xmlParser = new DOMParser();
+					let xmlDoc = xmlParser.parseFromString(data.value, "text/xml");
+					let nodes = xmlDoc.getElementsByTagName("com.pmease.quickbuild.model.Group");
+
+					for(let subj of nodes) {
+						var objOption = document.createElement("option");
+						objOption.text = subj.getElementsByTagName("name")[0].childNodes[0].nodeValue;
+    					objOption.value = rightlist.length+1;
+    					selRight.options.add(objOption);
+					}
+					//console.log(value);
+				});
+				
+				rightlist.style.display = '';
+			};
+			
+			addButton.onclick = function () {
+				addright.style.display = '';
+      			const texts = [...selRight.options].filter(option => option.selected).map(option => option.text);
+				//console.log(texts);
+				
+				for( let item of texts) {
+					var objOption = document.createElement("option");
+					objOption.text = item;
+					objOption.value = selAdd.length + 1;
+					selAdd.options.add(objOption);
+				}
+    		};
+			
+			delButton.onclick = function () {
+				//addright.style.display = '';
+      			//const texts = [...selRight.options].filter(option => option.selected).map(option => option.text);
+				//console.log(texts);
+				
+				for( let item of texts) {
+					var objOption = document.createElement("option");
+					objOption.text = item;
+					objOption.value = selAdd.length + 1;
+					selAdd.options.add(objOption);
+				}
+    		};
 		}
 	</script>
 </head>
 	
-<body>
-<!-- <div class="setting">
-    <input type="button" class="w-btn-green" value="Setting" >
-</div> -->
+<body onload=start()>
+<div class="reset">
+    <input type="button" class="w-btn-green" value="Reset" >
+</div>
 서버 선택
 <p>
 	  <label>
@@ -42,16 +132,19 @@
 권한 목록
 <p>
 <div id="rightlist">
-	<select multiple></select>
+	<select multiple id="right-option"></select>
 	<div class="add">
-		<input type="button" value="Add" >
+		<input type="button" value="Add" id='add-button'>
 	</div>
 </div>
 </p>
 선택된 권한
 <p>
 	<div id="addright">
-		<select multiple></select>
+		<select multiple id="add-option"></select>
+		<div class="del">
+			<input type="button" value="Del" id='del-button'>
+		</div>
 	</div>
 </p>
 계정 정보

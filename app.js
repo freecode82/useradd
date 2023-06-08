@@ -10,12 +10,13 @@ const urlencodedParser = bodyParser.urlencoded({extended: false});
 serverList = { prd: 'http://192.168.79.128:8810', dev: 'http://192.168.79.128:8810'};
 api_list = { getgrp: '/rest/groups'};
 quick_admin_info = 'admin:00cog7@!';
-username = 'admin';
-password = '00cog7@!';
+
 request_options = {
 	method: 'GET',
 	headers: {'Authorization': 'Basic ' + new Buffer.from(quick_admin_info).toString('base64')}
 };
+
+
 
 app.get('/', (request, response) => {
 	fs.readFile('quick-useradd.html', (err, data) => {

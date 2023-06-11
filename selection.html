@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <title>selection</title>
-	<link href="button-style.css" type="text/css" rel="stylesheet">
 	<style>
 		.container {
   			display: flex;
@@ -12,18 +11,29 @@
   			min-height: 100vh;
 			padding-top: 30px;
   			font-weight: 300;
+		} 
+		a:link, a:visited {
+			 background-color: #FFA500;
+			 color: maroon;
+			 padding: 15px 25px;
+			 text-align: center;
+			 text-decoration: none;
+			 display: inline-block;
+		}
+ 		a:hover, a:active {
+     		background-color: #FF4500;
 		}
 	</style>
 </head>
 <body>
 <div class="container">
-    <a href="/quickbuild" class="btn-gradient cyan large">Quickbuild</a>
-    <a href="#" class="btn-gradient orange large">Jenkins</a>
+    <a href="/quickbuild" class="btn-gradient cyan large">Quickbuild</a>&nbsp;&nbsp;&nbsp;   
+    <a href="/jenkins" class="btn-gradient orange large">Jenkins</a>&nbsp;&nbsp;&nbsp;   
     <a href="#" class="btn-gradient blue large">k8s</a>
     <!-- <a href="#" class="btn-gradient purple large">Button</a>
     <a href="#" class="btn-gradient green large">Button</a>
     <a href="#" class="btn-gradient yellow large">Button</a>
     <a href="#" class="btn-gradient red large">Button</a> -->
-  </div>
+</div>
 </body>
 </html>

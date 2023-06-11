@@ -5,11 +5,60 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>useradd</title>
-<style>
-	.w-btn-green {
-    	background-color: skyblue;
-		padding: 10px 30px;
-	}
+	<style>
+		.littleButton {
+			box-shadow:inset 0px 0px 14px -3px #f2fadc;
+			background:linear-gradient(to bottom, #dbe6c4 5%, #9ba892 100%);
+			background-color:#dbe6c4;
+			border-radius:6px;
+			border:1px solid #b2b8ad;
+			display:inline-block;
+			cursor:pointer;
+			color:#757d6f;
+			font-family:Arial;
+			font-size:15px;
+			font-weight:bold;
+			padding:3px 12px;
+			text-decoration:none;
+			text-shadow:0px 1px 0px #ced9bf;
+		}
+		.littleButton:hover {
+			background:linear-gradient(to bottom, #9ba892 5%, #dbe6c4 100%);
+			background-color:#9ba892;
+		}
+		.littleButton:active {
+			position:relative;
+			top:1px;
+		}
+
+		
+		.myButton {
+			box-shadow:inset 0px 1px 0px 0px #a4e271;
+			background:linear-gradient(to bottom, #89c403 5%, #77a809 100%);
+			background-color:#89c403;
+			border-radius:6px;
+			border:1px solid #74b807;
+			display:inline-block;
+			cursor:pointer;
+			color:#ffffff;
+			font-family:Arial;
+			font-size:15px;
+			font-weight:bold;
+			padding:6px 24px;
+			text-decoration:none;
+			text-shadow:0px 1px 0px #528009;
+		}
+		.myButton:hover {
+			background:linear-gradient(to bottom, #77a809 5%, #89c403 100%);
+			background-color:#77a809;
+		}
+		.myButton:active {
+			position:relative;
+			top:1px;
+}
+
+		input:focus {outline:none;}
+		input:focus {outline:2px solid skyblue;}
 	</style>
 	<script>
 		start = function() {
@@ -123,11 +172,11 @@
 				const newUser = document.createElement('div');
 				newUser.id = "user" + cnt;
 				newUser.className = 'userinfo';
-				newUser.innerHTML = `<label>id:</label><input type='text' id='id${cnt}' class='id'>
-									 <label>pw:</label><input type='password' id='pw${cnt}' class='pw'>
-                                     <label>name:</label><input type='text' id='nm${cnt}' class='nm'>
-									 <label>email:</label><input type='text' id='em${cnt}' class='em'>
-									 <input type='button' value='-' id='delUser' onclick='remove(this)'><br>`;
+				newUser.innerHTML = `<label>id:</label>&nbsp;<input type='text' id='id${cnt}' class='id'>
+									 <label>pw:</label>&nbsp;<input type='password' id='pw${cnt}' class='pw'>
+                                     <label>name:</label>&nbsp;<input type='text' id='nm${cnt}' class='nm'>
+									 <label>email:</label>&nbsp;<input type='text' id='em${cnt}' class='em'>
+									 <input type='button' class='littleButton' value='-' id='delUser' onclick='remove(this)'><br>`;
 				console.log(newUser.innerHTML);
 				userForm.appendChild(newUser);
 				cnt++;
@@ -136,7 +185,6 @@
 		
 		function remove(e) {
 			document.getElementById('userform').removeChild(e.parentNode);
-			cnt--;
 		}
 		
 		function useradd(e) {
@@ -179,7 +227,7 @@
 	
 <body onload=start()>
 <div class="reset">
-    <input type="button" class="w-btn-green" value="Reset" >
+    <input type="button" class="myButton" value="Reset" >
 </div>
 서버 선택
 <p>
@@ -210,14 +258,15 @@
 		</div>
 	</div>
 </p>
-계정 정보(수동추가)<input type="button" value="+" id='plsUser'><br>
+계정 정보(수동추가)<input type="button" class="littleButton" value="+" id='plsUser'><br>
 <p>
 <div id="userform">
-</div>
-<input type="button" value="사용자 생성" id='userButton' onclick='useradd()'><br>
+</div><br>
+<input type="button" class="myButton" value="사용자 생성" id='userButton' onclick='useradd()'><br>
 </p>
 <div id="log">
+logs<br><br>
+<textarea id='logs' cols='125' rows='20'></textarea>
 </div>
-<textarea id='logs' cols='120' rows='20'></textarea>
 </body>
 </html>

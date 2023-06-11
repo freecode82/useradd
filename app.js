@@ -37,7 +37,9 @@ app.get('/', (request, response) => {
 	});
 });
 
-app.get('/selection', (request, response) => {
+app.post('/selection', jsonParser, (request, response) => {
+	console.log(request.body.userName);
+	
 	fs.readFile('selection.html', (err, data) => {
 		response.send(data.toString());
 	});
@@ -45,6 +47,12 @@ app.get('/selection', (request, response) => {
 
 app.get('/quickbuild', (request, response) => {
 	fs.readFile('quick-useradd.html', (err, data) => {
+		response.send(data.toString());
+	});
+});
+
+app.get('/jenkins', (request, response) => {
+	fs.readFile('jenkins-useradd.html', (err, data) => {
 		response.send(data.toString());
 	});
 });
@@ -57,8 +65,7 @@ app.post('/getgroup', jsonParser, (request, response) => {
 	req(request_options, (err, resp, body) => {
 		if (err) {
 			console.log("그룹 정보 가져오는 중 에러 발생: ", err)
-			response.send("\nError: 그룹 정보 가져오는 중 에러 발생: " + err);
-			return;
+			return response.send("\nError: 그룹 정보 가져오는 중 에러 발생: " + err);
 			//throw new Error(err);
 		}
 		
@@ -105,6 +112,13 @@ app.post('/adduser', jsonParser, (request, response) => {
 	}
 	
 	users.forEach( (user) => { //사용자 하나 하나에 대한 작업 진행
+		//꼭 필요한 정보에 빈값이 있는지 확인
+		if ( user.id == '' || user.password == '') {
+			console.log("아이디나 암호가 없는 사용자가 있습니다.");
+			response.send("\n사용자 중 아이디 또는 암호가 없는 사용자가 있습니다.\n계정 생성의 최소 필요 정보는 아이디/암호 입니다.");
+			return;
+		}
+		
 		//사용자 존재 여부 확인
 		request_options.url = serverList[type] + api_list['getuserid'] + user.id;
 		console.log(request_options);

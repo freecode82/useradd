@@ -14,11 +14,9 @@ api_list = {
 	getgrp: '/rest/groups', 
 	getmembership: '/rest/memberships?user_id=', 
 	getuserid: '/rest/ids?user_name=', 
-	getgroupid: '/rest/ids?group_name=',
 	createmembership: '/rest/memberships',
 	createuser: '/rest/users'
 };
-
 
 quick_admin_info = 'admin:00cog7@!';
 
@@ -33,61 +31,19 @@ request_options_post = {
 }
 
 
-
-
-/*
-function creteUser(userInfo) {
-	let xmlParser = new DOMParser();
-	let xmlDoc = xmlParser.parseFromString(creteuserxml, "text/xml");
-	
-}
-
-
-function getUserIdNumber(type, id) {
-	//let res = null;
-	
-	request_options.url = serverList[type] + api_list['getuserid'] + id;
-	req(request_options, (err, resp, body) => {
-		if (err) throw new Error(err);
-		
-		//console.log(resp);
-		console.log(resp.body);
-		console.log(body);
-		
-		return body;
-	});
-}
-
- function getGroupIdNumber(type, groups) {
-	request_options.url = serverList[type] + api_list['getgroupid'] + id;
-	req(request_options, (err, resp, body) => {
-		if (err) throw new Error(err);
-		console.log(body);
-	});
-}
-
- function createMembership(type, id, grpIds) {
-	let xmlParser = new DOMParser();
-	let xmlDoc = xmlParser.parseFromString(createmembership, "text/xml");
-	
-	request_options.url = serverList[type] + api_list['createmembership'] + id;
-	req(request_options, (err, resp, body) => {
-		if (err) throw new Error(err);
-		console.log(body);
-	});
-} */
-
-function checkMembership(type, id, grpIds) {
-	request_options.url = serverList[type] + api_list['getmembership'] + id;
-	req(request_options, (err, resp, body) => {
-		if (err) throw new Error(err);
-		console.log(body);
-	});
-}
-
-
-
 app.get('/', (request, response) => {
+	fs.readFile('login.html', (err, data) => {
+		response.send(data.toString());
+	});
+});
+
+app.get('/selection', (request, response) => {
+	fs.readFile('selection.html', (err, data) => {
+		response.send(data.toString());
+	});
+});
+
+app.get('/quickbuild', (request, response) => {
 	fs.readFile('quick-useradd.html', (err, data) => {
 		response.send(data.toString());
 	});
@@ -99,13 +55,19 @@ app.post('/getgroup', jsonParser, (request, response) => {
 	console.log(request_options);
 	
 	req(request_options, (err, resp, body) => {
-		if (err) throw new Error(err);
-		//console.log(body);
-		//console.log(resp);
-		//value = resp.body;
+		if (err) {
+			console.log("그룹 정보 가져오는 중 에러 발생: ", err)
+			response.send("\nError: 그룹 정보 가져오는 중 에러 발생: " + err);
+			return;
+			//throw new Error(err);
+		}
+		
 		console.log(body);
+		
+		//그룹 정보를 서버에 저장해 둔다. 사용자 그룹 추가 또는 확인용
 		let parser = new xml2js.Parser();
 		groupInfo = {};
+	
 		parser.parseString(body, function (err, result) {
 			console.log(result);
 			result['list']['com.pmease.quickbuild.model.Group'].forEach( i => {
@@ -130,10 +92,15 @@ app.post('/adduser', jsonParser, (request, response) => {
 	users = allUserInfo.slice(2,allUserInfo.length); //유저 정보만 추출
 	console.log(users);
 	
+	if (users.length == 0) {
+		response.send("\nError: 사용자 정보가 전달 되지 못하였습니다.\n사용자 정보를 확인해주세요");
+		return;
+	}
+	
 	try {
 		console.log("groupinfo:", groupInfo);
 	} catch(err) {
-		response.send("Error: 서버 내부에서 그룹 정보를 가져 올 수 없습니다. 서버와 권한을 다시 선택하십시요.")
+		response.send("\nError: 서버 내부에서 그룹 정보를 가져 올 수 없습니다.\n서버와 권한을 다시 선택하십시요.");
 		return;
 	}
 	
@@ -144,14 +111,15 @@ app.post('/adduser', jsonParser, (request, response) => {
 		req(request_options, (err, resp, body) => {
 			if (err) {
 				console.log(err);
-				response.send(err);
+				response.send("\n사용자 정보 확인 중 발생: " + err);
 				return;
 				//throw new Error(err);
 			}
 			
 			console.log(body);
 			if ( body == '') { //사용자가 존재하지 않으면
-				console.log('id not exist');
+				console.log(user.id + ' id not exist');
+
 				newuser = {
   					'com.pmease.quickbuild.model.User': {
     					favoriteDashboardIds: {
@@ -165,8 +133,6 @@ app.post('/adduser', jsonParser, (request, response) => {
   					}
 				};
 				
-				//const 
-				//const 
   				data = builder.buildObject(newuser); //사용자 정보 객체를 xml 형태로 만듬
 				console.log(data);
 				//사용자 생성하기
@@ -175,40 +141,19 @@ app.post('/adduser', jsonParser, (request, response) => {
 				req(request_options_post, (err, resp, body) => {
 					if (err) {
 						console.log(err);
-						response.send("사용자 생성 중 에러: ", err);
+						response.send("\n사용자 생성 중 에러: " + err);
 						return;
 						//throw new Error(err);
 					}
 					//생성이 성공하면 user id를 리턴, 문제가 생기면 숫자가 아닌 다른 것을 리턴한다.
 					console.log(body);
-					if (isNaN(body)) { // 사용자를 만드는데 문제가 생김
+					if (isNaN(body)) { // 사용자를 만드는데 문제가 생김, critical에러는 아님, 서버가 안죽음
 						response.send(body);
 						return;
 					} else { //사용자가 올바르게 만들어져서 아이디 넘버를 리턴
-						console.log("그룹에 넣기")
+						console.log(user.id + "success create account");
+						console.log(user.id + "asign group start");
 						request_options_post.url = serverList[type] + api_list['createmembership'];
-						
-						//그룹정보 불러오기
-						/* tmp_request_options = {
-							method: 'POST',
-							headers: {'Content-Type':'application/json'},
-							body: JSON.stringify({type: type}),
-							url: serverList[type]+'/getgroup'
-						};
-						
-						console.log(tmp_request_options);
-					
-						req(tmp_request_options, (err, resp, body) => {
-							if (err) {
-								console.log(err);
-								response.send(err);
-								return;
-								//throw new Error(err);
-							}
-							console.log("second grpinfo: ", resp);
-							//console.log("groupinfo:", groupInfo);
-						});
-						*/
 						
 						rightlist.forEach( r => {
 							createmembership = {
@@ -224,35 +169,77 @@ app.post('/adduser', jsonParser, (request, response) => {
 							req(request_options_post, (err, resp, body) => {
 								if (err) {
 									console.log(err);
-									response.send(err);
+									response.send("\n멤버쉽 할당 중 에러 발생: " + err);
 									return;
 								}
 								console.log(body); //멤버쉽이 잘 생성 되면 멤버쉽의 아이디를 리턴한다.
-								if (isNaN(body)) { // 사용자를 만드는데 문제가 생김
+								if (isNaN(body)) { // 멤버쉽 만드는데 문제가 생김, critical에러는 아님, 서버가 안죽음
 									response.send(body);
 									return;
-								} else {
-									response.send(user + "success crete and asign group");
-								}
+								} 
 							});
 						});
 					}
 				});
 			} else { // 사용자가 존재하면
-				console.log('id already exist');
+				console.log(user.id + ' already exist');
+				let userNumber = body;
+				//해당 사용자의 멤버쉽을 조사한다.
+				request_options.url = serverList[type] + api_list['getmembership'] + userNumber;
+				console.log(request_options);
+				req(request_options, (err, resp, body) => {
+					if (err) {
+						console.log(err);
+						response.send("\n사용자 멤버쉽 조회 중 발생: " + err);
+						return;
+						//throw new Error(err);
+					}
+					
+					let parser = new xml2js.Parser();
+					
+					parser.parseString(body, function (err, result) {
+						console.log(result);
+	
+						rightlist.map(r => Number(groupInfo[r])).forEach( r => {
+							console.log(r)
+						//	console.log(result['list']['com.pmease.quickbuild.model.Membership'].map( i => i.group )[1]);
+							if (result['list']['com.pmease.quickbuild.model.Membership'].map(i => Number(i.group)).indexOf(r) < 0) {
+								console.log(r + " 없음");
+								//권한 추가 
+								request_options_post.url = serverList[type] + api_list['createmembership'];
+								createmembership = {
+									'com.pmease.quickbuild.model.Membership': {
+										user: userNumber,
+										group: r
+									}					
+								};
+								data = builder.buildObject(createmembership);
+								console.log(data);
+								request_options_post.body = data;
+								console.log(request_options_post);
+								req(request_options_post, (err, resp, body) => {
+									if (err) {
+										console.log(err);
+										response.send("\n멤버쉽 할당 중 에러 발생: " + err);
+										return;
+									}
+									console.log(body); //멤버쉽이 잘 생성 되면 멤버쉽의 아이디를 리턴한다.
+									if (isNaN(body)) { // 멤버쉽 만드는데 문제가 생김, critical에러는 아님, 서버가 안죽음
+										response.send(body);
+										return;
+									} 
+								});
+							} else {
+								console.log( r + "있음");
+							}
+						});
+					}); 
+				});
 			}
 		});
 	});
 });
 
-
-app.post('/createmembership', jsonParser, (request, response) => {
-	console.log('createmembership');
-})
-
-app.post('/getgroupnumber', jsonParser, (request, response) => {
-	console.log('getgroupnumber');
-})
 
 app.listen(3005, () => {
 	console.log('server start');

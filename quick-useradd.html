@@ -21,6 +21,7 @@
 			selAdd = document.getElementById("add-option");
 			addButton = document.getElementById("add-button");
 			delButton = document.getElementById("del-button");
+			logarea = document.getElementById("logs");
 			rightlist.style.display = 'none';
 			addright.style.display = 'none';
 			cnt = 1;
@@ -94,7 +95,6 @@
       			const texts = [...selRight.options].filter(option => option.selected).map(option => option.text);
 				const alredy_texts = [...selAdd.options].map(option => option.text);
 				console.log(texts);
-				console.log(alredy_texts);
 				
 				if (texts.length == 0) {
 					alert("선택된 권한이 없습니다.");
@@ -169,6 +169,7 @@
 				body: JSON.stringify(allUserJson),
 			}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 				console.log(data.value);
+				logarea.value += data.value;
 			});
 			
 			allUserJson.length = 1; // 사용자 중복을 피하기 위하여 type만 남기고 초기화, 타입은 서버 선택 시 자동으로 넣어짐
@@ -215,5 +216,8 @@
 </div>
 <input type="button" value="사용자 생성" id='userButton' onclick='useradd()'><br>
 </p>
+<div id="log">
+</div>
+<textarea id='logs' cols='120' rows='20'></textarea>
 </body>
 </html>

@@ -4,6 +4,8 @@ const req = require('request');
 const fs = require('fs');
 const xml2js = require('xml2js');
 const builder = new xml2js.Builder();
+const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
 
 const app = express();
 const jsonParser = bodyParser.json();
@@ -19,6 +21,8 @@ api_list = {
 };
 
 quick_admin_info = 'admin:00cog7@!';
+logininfo_id = "admin";
+logininfo_passwd = "admin";
 
 request_options = {
 	method: 'GET',
@@ -30,6 +34,16 @@ request_options_post = {
 	headers: {'Authorization': 'Basic ' + new Buffer.from(quick_admin_info).toString('base64')}
 }
 
+app.use(cookieParser());
+
+app.use(
+  expressSession({
+    secret: "quickbuildusermake",
+    resave: true,
+    saveUninitialized: true
+  })
+);
+
 
 app.get('/', (request, response) => {
 	fs.readFile('login.html', (err, data) => {
@@ -37,27 +51,88 @@ app.get('/', (request, response) => {
 	});
 });
 
-app.post('/selection', jsonParser, (request, response) => {
-	console.log(request.body.userName);
-	
-	fs.readFile('selection.html', (err, data) => {
-		response.send(data.toString());
-	});
-});
 
 app.get('/quickbuild', (request, response) => {
-	fs.readFile('quick-useradd.html', (err, data) => {
-		response.send(data.toString());
-	});
+	if (request.session.user) {
+		fs.readFile('quick-useradd.html', (err, data) => {
+			response.send(data.toString());
+		});
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
 });
+
 
 app.get('/jenkins', (request, response) => {
-	fs.readFile('jenkins-useradd.html', (err, data) => {
-		response.send(data.toString());
-	});
+	if (request.session.user) {
+		fs.readFile('jenkins-useradd.html', (err, data) => {
+			response.send(data.toString());
+		});
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
 });
 
+
+app.post('/login', urlencodedParser, (request, response) => {
+	console.log('login 처리');
+ 
+    var paramID = request.body.username || request.query.username;
+    var pw = request.body.userpassword || request.query.userpassword;
+ 
+    if (request.session.user) {
+        console.log('이미 로그인 되어 있음');
+		response.writeHead(200, { "Content-Type": "text/html;characterset=utf8" });
+        response.write('<h1>Already Login</h1>');
+		response.write('<a href="/selection">Move</a>');
+		response.end();
+        //fs.readFile('selection.html', (err, data) => {
+		//	response.send(data.toString());
+		//});
+    } else {
+		if (paramID == logininfo_id && pw == logininfo_passwd) {
+			request.session.user =
+					{
+						id: paramID,
+						name: paramID,
+						authorized: true
+					};
+        	response.writeHead(200, { "Content-Type": "text/html;characterset=utf8" });
+            response.write('<h1>Login Success</h1>');
+			response.write('<a href="/selection">Move</a>');
+            response.end();
+		} else {
+			console.log("로그인 하지 못했습니다.");
+			response.writeHead(500, { "Content-Type": "text/html;characterset=utf8" });
+        	response.write('<h1>Login Failed</h1>');
+			response.write('<a href="/">Go to Login Page</a>');
+			response.end();
+			//response.redirect("/");
+		}
+    }
+});
+
+app.get('/selection', jsonParser, (request, response) => {
+	if (request.session.user) {
+		fs.readFile('selection.html', (err, data) => {
+			response.send(data.toString());
+		});
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
+});
+
+
+
 app.post('/getgroup', jsonParser, (request, response) => {
+	if (!request.session.user) {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
+	
 	console.log(request.body);
 	request_options.url = serverList[request.body.type] + api_list['getgrp'];
 	console.log(request_options);
@@ -88,6 +163,10 @@ app.post('/getgroup', jsonParser, (request, response) => {
 
 
 app.post('/adduser', jsonParser, (request, response) => {
+	if (!request.session.user) {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
 	//console.log(request.body);
 	//response.send(request.body);
 	allUserInfo = request.body; //서버 타임과 유저 정보

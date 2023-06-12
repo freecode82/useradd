@@ -119,7 +119,7 @@
 				fetch('/getgroup', {
 					method: 'POST',
 					headers: {'Content-Type':'application/json'},
-					body: JSON.stringify({type: 'prd'}),
+					body: JSON.stringify({type: 'dev'}),
 				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 					console.log(data.value);
 					
@@ -262,11 +262,58 @@
 <p>
 <div id="userform">
 </div><br>
+<input type="file" id="inputRead" accept=".txt" />
+<p></p>
 <input type="button" class="myButton" value="사용자 생성" id='userButton' onclick='useradd()'><br>
 </p>
 <div id="log">
 logs<br><br>
 <textarea id='logs' cols='125' rows='20'></textarea>
 </div>
+<br>
+<script>
+	const element = document.querySelector('#inputRead');
+	const pEl = document.querySelector('#userform');
+	
+	element.addEventListener('input', (event) => {
+		const target = event.target;
+		const files = target.files;
+		const file = files[0];
+		
+		const reader = new FileReader();
+		reader.addEventListener('load', () => {
+			console.log(reader.result);
+			let letter = reader.result.split(/\r\n|\n/);
+			
+			for(let i of letter) {
+				spdata = i.trim().replace(/\t/g," ").replace(/,/g," ").split(" ");
+				console.log(spdata);
+				console.log(spdata.length);
+				
+				if(spdata[0] != undefined && spdata[1] != undefined && spdata[2] != undefined && spdata[3] != undefined) {
+					const userForm = document.getElementById('userform');
+					const newUser = document.createElement('div');
+					newUser.id = "user" + cnt;
+					newUser.className = 'userinfo';
+					newUser.innerHTML = `<label>id:</label>&nbsp;<input type='text' id='id${cnt}' class='id' value='${spdata[0]}'>
+										 <label>pw:</label>&nbsp;<input type='password' id='pw${cnt}' class='pw' value='${spdata[1]}' >
+										 <label>name:</label>&nbsp;<input type='text' id='nm${cnt}' class='nm' value='${spdata[2]}'>
+										 <label>email:</label>&nbsp;<input type='text' id='em${cnt}' class='em' value='${spdata[3]}'>
+										 <input type='button' class='littleButton' value='-' id='delUser' onclick='remove(this)'><br>`;
+					console.log(newUser.innerHTML);
+					userForm.appendChild(newUser);
+					cnt++;
+				} else {
+					logarea.value += "파일의 일부에서 필드 4개가 아닌 정보를 확인 했습니다.";
+				}
+			}
+		});
+		try {
+			reader.readAsText(file);
+		} catch(err) {
+			
+		}
+	});
+</script>
 </body>
 </html>

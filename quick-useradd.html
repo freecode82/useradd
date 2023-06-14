@@ -107,6 +107,7 @@
 				});
 				
 				rightlist.style.display = '';
+				selRight.size = 20;
 				allUserJson.push({type: 'prd'});
 			};
 			
@@ -136,6 +137,7 @@
 				});
 				
 				rightlist.style.display = '';
+				selRight.size = 20;
 				allUserJson.push({type: 'dev'});
 			};
 			
@@ -187,6 +189,7 @@
 			document.getElementById('userform').removeChild(e.parentNode);
 		}
 		
+		/*
 		function useradd(e) {
 			const alredy_texts = [...selAdd.options].map(option => option.text);
 			if (alredy_texts.length == 0) {
@@ -221,13 +224,143 @@
 			});
 			
 			allUserJson.length = 1; // 사용자 중복을 피하기 위하여 type만 남기고 초기화, 타입은 서버 선택 시 자동으로 넣어짐
+		} */
+		
+		function useradd2() {
+			const alredy_texts = [...selAdd.options].map(option => option.text);
+			if (alredy_texts.length == 0) {
+				alert("사용자에게 추가할 권한을 선택하지 않았습니다.!!");
+				return;
+			}
+			
+			let checkType = allUserJson[0];
+			let checkUser = [];
+			
+			allUserJson.push({rightlist: alredy_texts});
+			allUser = document.getElementsByClassName("userinfo");
+			
+			
+			for(let user of allUser) {
+				checkUser.push({
+					id: user.getElementsByClassName("id")[0].value,
+					password: user.getElementsByClassName("pw")[0].value,
+					name: user.getElementsByClassName("nm")[0].value,
+					email: user.getElementsByClassName("em")[0].value
+				});
+			}
+			
+			console.log(checkUser);
+			console.log(checkType);
+			console.log(allUserJson[1]);
+			
+			for (let i of checkUser) {
+				let tmp = [];
+				tmp.push(checkType);
+				tmp.push(allUserJson[1]);
+				tmp.push(i);
+				
+				fetch('/adduser', {
+					method: 'POST',
+					headers: {'Content-Type':'application/json'},
+					body: JSON.stringify(tmp),
+				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+					console.log(data.value);
+					logarea.value += data.value;
+				});
+			}
+			allUserJson.length = 1; // 사용자 중복을 피하기 위하여 type만 남기고 초기화, 타입은 서버 선택 시 자동으로 넣어짐
+		}
+		
+		function reset() {
+			selRight.options.length = 0;
+			selAdd.options.length = 0;
+			logarea.value = '';
+			prd.checked = false;
+			dev.checked = false;
+			rightlist.style.display = 'none';
+			addright.style.display = 'none';
+			cnt = 1;
+		}
+		
+		function userreset() {
+			const userForm = document.getElementById('userform');
+			userForm.innerHTML = "";
+			cnt = 1;
+		}
+		
+		function filesreset() {
+			const element = document.querySelector('#inputRead');
+			element.value = '';
+		}
+		
+		function usercheck() {
+			const alredy_texts = [...selAdd.options].map(option => option.text);
+			if (alredy_texts.length == 0) {
+				alert("사용자에게 추가할 권한을 선택하지 않았습니다.!!");
+				return;
+			}
+			
+			let checkUser = [];
+			let checkType = null;
+			let checkRight = null;
+			
+			if (prd.checked) {
+				checkType = {type: 'prd'};
+			} else if (dev.checked) {
+				checkType = {type: 'dev'};
+			} else {
+				alert('서버를 선택하지 않았습니다.');
+				return;
+			}
+			
+			
+			checkRight = {rightlist: alredy_texts};
+			let allChecklUser = document.getElementsByClassName("userinfo");
+			
+			
+			for(let user of allChecklUser ) {
+				checkUser.push({
+					id: user.getElementsByClassName("id")[0].value,
+					password: user.getElementsByClassName("pw")[0].value,
+					name: user.getElementsByClassName("nm")[0].value,
+					email: user.getElementsByClassName("em")[0].value
+				});
+			}
+			
+			console.log(checkUser);
+			console.log(checkType);
+			console.log(checkRight);
+			
+			for (let i of checkUser) {
+				let tmp = [];
+				tmp.push(checkType);
+				tmp.push(checkRight);
+				tmp.push(i);
+				
+				fetch('/checkuser', {
+					method: 'POST',
+					headers: {'Content-Type':'application/json'},
+					body: JSON.stringify(tmp),
+				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+					console.log(data.value);
+					logarea.value += data.value;
+				});
+			}
+		}
+		
+		function logdelete() {
+			logarea.value = '';
 		}
 	</script>
 </head>
 	
 <body onload=start()>
 <div class="reset">
-    <input type="button" class="myButton" value="Reset" >
+    <input type="button" class="littleButton" value="Reset" onClick="reset()">
+	<input type="button" class="littleButton" value="User Reset" onClick="userreset()">
+	<input type="button" class="littleButton" value="File Reset" onClick="filesreset()">
+	<input type="button" class="littleButton" value="사용법" onClick="window.open('/usage')">
+	<input type="button" class="littleButton" value="Log out" id='logout' onClick="location.href='/logout'"><br><br>
 </div>
 서버 선택
 <p>
@@ -264,10 +397,11 @@
 </div><br>
 <input type="file" id="inputRead" accept=".txt" />
 <p></p>
-<input type="button" class="myButton" value="사용자 생성" id='userButton' onclick='useradd()'><br>
+<input type="button" class="myButton" value="사용자 생성" id='userButton' onclick='useradd2()'>
+<input type="button" class="myButton" value="사용자 체크" id='userCheckButton' onclick='usercheck()'><br><br>
 </p>
 <div id="log">
-logs<br><br>
+logs<input type="button" class="littleButton" value="로그 삭제" id='logButton' onclick='logdelete()'><br><br><br>
 <textarea id='logs' cols='125' rows='20'></textarea>
 </div>
 <br>

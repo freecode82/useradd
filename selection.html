@@ -23,9 +23,35 @@
  		a:hover, a:active {
      		background-color: #FF4500;
 		}
+		
+		.littleButton {
+			box-shadow:inset 0px 0px 14px -3px #f2fadc;
+			background:linear-gradient(to bottom, #dbe6c4 5%, #9ba892 100%);
+			background-color:#dbe6c4;
+			border-radius:6px;
+			border:1px solid #b2b8ad;
+			display:inline-block;
+			cursor:pointer;
+			color:#757d6f;
+			font-family:Arial;
+			font-size:15px;
+			font-weight:bold;
+			padding:3px 12px;
+			text-decoration:none;
+			text-shadow:0px 1px 0px #ced9bf;
+		}
+		.littleButton:hover {
+			background:linear-gradient(to bottom, #9ba892 5%, #dbe6c4 100%);
+			background-color:#9ba892;
+		}
+		.littleButton:active {
+			position:relative;
+			top:1px;
+		}
 	</style>
 </head>
 <body>
+	<input type="button" class="littleButton" value="Log out" id="logout" onclick="location.href='/logout'"><br>
 <div class="container">
     <a href="/quickbuild" class="btn-gradient cyan large">Quickbuild</a>&nbsp;&nbsp;&nbsp;   
     <a href="/jenkins" class="btn-gradient orange large">Jenkins</a>&nbsp;&nbsp;&nbsp;   

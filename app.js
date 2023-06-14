@@ -6,6 +6,8 @@ const xml2js = require('xml2js');
 const builder = new xml2js.Builder();
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
+const path = require('path');
+const dir = path.join(__dirname,'');
 
 const app = express();
 const jsonParser = bodyParser.json();
@@ -46,10 +48,54 @@ app.use(
 
 
 app.get('/', (request, response) => {
-	fs.readFile('login.html', (err, data) => {
-		response.send(data.toString());
-	});
+	if (request.session.user) {
+		console.log('이미 로그인 되어 있습니다.');
+		response.redirect('/selection');
+	} else {
+		fs.readFile('login.html', (err, data) => {
+			response.send(data.toString());
+		});
+	}
 });
+
+
+app.get('/usage', (request, response) => {
+	console.log('이미 로그인 되어 있습니다.');
+	if (request.session.user) {
+		fs.readFile('usage.html', (err, data) => {
+			response.send(data.toString());
+		});
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.");
+		response.redirect("/");
+	}
+});
+
+
+app.get('/images/*', (request, response) => {
+	console.log('image process');
+	if (request.session.user) {
+		var file = path.join(dir, request.path);
+		if (file.indexOf(dir + path.sep) !== 0) {
+			return res.status(403).end('Forbidden');
+		}
+		var type = 'image/jpeg';
+		var s = fs.createReadStream(file);
+		
+		s.on('open', function() {
+			response.set('Content-Type', type);
+			s.pipe(response);
+		});
+		s.on('error', function() {
+			response.set('Content-Type', 'text/plain');
+			response.status(404).end('Not found');
+		})
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.");
+		response.redirect("/");
+	}
+});
+
 
 
 app.get('/quickbuild', (request, response) => {
@@ -62,6 +108,7 @@ app.get('/quickbuild', (request, response) => {
 		response.redirect("/");
 	}
 });
+
 
 
 app.get('/jenkins', (request, response) => {
@@ -114,6 +161,28 @@ app.post('/login', urlencodedParser, (request, response) => {
     }
 });
 
+
+app.get('/logout', (request, response) => {
+	console.log('logout');
+	if (request.session.user) {
+		console.log('logout 처리');
+		request.session.destroy(
+			function (err) {
+				if(err) {
+					console.log('세션 삭제 에러');
+					return;
+				}
+				console.log('session delete success');
+				response.redirect('/');
+			}
+		);
+	} else {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
+});
+
+
 app.get('/selection', jsonParser, (request, response) => {
 	if (request.session.user) {
 		fs.readFile('selection.html', (err, data) => {
@@ -149,11 +218,13 @@ app.post('/getgroup', jsonParser, (request, response) => {
 		//그룹 정보를 서버에 저장해 둔다. 사용자 그룹 추가 또는 확인용
 		let parser = new xml2js.Parser();
 		groupInfo = {};
+		reverseGroupInfo = {};
 	
 		parser.parseString(body, function (err, result) {
 			console.log(result);
 			result['list']['com.pmease.quickbuild.model.Group'].forEach( i => {
 				groupInfo[i.name] = i.id;
+				reverseGroupInfo[i.id] = i.name;
 			})
 			console.log(groupInfo);
 		});
@@ -272,6 +343,7 @@ app.post('/adduser', jsonParser, (request, response) => {
 								} 
 							});
 						});
+						response.send("\n" + user.id + "사용자 생성 및 권한 할당 완료");
 					}
 				});
 			} else { // 사용자가 존재하면
@@ -326,6 +398,7 @@ app.post('/adduser', jsonParser, (request, response) => {
 								console.log( r + "있음");
 							}
 						});
+						response.send("\n" + user.id + "사용자는 이미 존재하여 권한 확인 및 할당 완료");
 					}); 
 				});
 			}
@@ -333,6 +406,95 @@ app.post('/adduser', jsonParser, (request, response) => {
 	});
 });
 
+
+app.post('/checkuser', jsonParser, (request, response) => {
+	if (!request.session.user) {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
+	//console.log(request.body);
+	//response.send(request.body);
+	let allUserInfo = request.body; //서버 타임과 유저 정보
+	console.log(allUserInfo);
+	let type = allUserInfo[0]['type']; //서버 타입
+	console.log(type);
+	let rightlist = allUserInfo[1]['rightlist'];
+	console.log(rightlist);
+	let users = allUserInfo.slice(2,allUserInfo.length); //유저 정보만 추출
+	console.log(users);
+	let sendMessage = '';
+	
+	if (users.length == 0) {
+		response.send("\nError: 사용자 정보가 전달 되지 못하였습니다.\n사용자 정보를 확인해주세요");
+		return;
+	}
+	
+	try {
+		console.log("groupinfo:", groupInfo);
+		console.log("reverseGroupInfo", reverseGroupInfo);
+	} catch(err) {
+		response.send("\nError: 서버 내부에서 그룹 정보를 가져 올 수 없습니다.\n서버와 권한을 다시 선택하십시요.");
+		return;
+	}
+	
+	users.forEach( (user) => { //사용자 하나 하나에 대한 작업 진행
+		//꼭 필요한 정보에 빈값이 있는지 확인
+		if ( user.id == '' || user.password == '') {
+			console.log("아이디나 암호가 없는 사용자가 있습니다.");
+			response.send("\n사용자 중 아이디 또는 암호가 없는 사용자가 있습니다.\n계정 생성의 최소 필요 정보는 아이디/암호 입니다.");
+			return;
+		}
+		
+		//사용자 존재 여부 확인
+		request_options.url = serverList[type] + api_list['getuserid'] + user.id;
+		console.log(request_options);
+		req(request_options, (err, resp, body) => {
+			if (err) {
+				console.log(err);
+				response.send("\n사용자 정보 확인 중 발생: " + err);
+				return;
+				//throw new Error(err);
+			}
+			
+			console.log(body);
+			if ( body == '') { //사용자가 존재하지 않으면
+				console.log(user.id + ' id not exist');
+				return response.send("\n" + user.id + "사용자는 존재하지 않습니다.");
+			} else { // 사용자가 존재하면
+				console.log('사용자 생성 확인');
+				sendMessage += "\n" + user.id + " 사용자 생성 확인";
+				let userNumber = body;
+				//해당 사용자의 멤버쉽을 조사한다.
+				request_options.url = serverList[type] + api_list['getmembership'] + userNumber;
+				console.log(request_options);
+				req(request_options, (err, resp, body) => {
+					if (err) {
+						console.log(err);
+						response.send("\n사용자 멤버쉽 조회 중 발생: " + err);
+						return;
+						//throw new Error(err);
+					}
+					
+					let parser = new xml2js.Parser();
+					
+					parser.parseString(body, function (err, result) {
+						console.log(result);
+	
+						rightlist.map(r => Number(groupInfo[r])).forEach( r => {
+							console.log(r)
+							if (result['list']['com.pmease.quickbuild.model.Membership'].map(i => Number(i.group)).indexOf(r) < 0) {
+								sendMessage += "\n" + user.id + " 사용자 " + reverseGroupInfo[r] + " 그룹 권한이 할당 되지 않았습니다.";
+							} else {
+								sendMessage += "\n" + user.id + " 사용자 " + reverseGroupInfo[r] + " 그룹 권한이 할당 정상 확인";
+							}
+						});
+						response.send(sendMessage);
+					}); 
+				});
+			}
+		});
+	});
+});
 
 app.listen(3005, () => {
 	console.log('server start');

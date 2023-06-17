@@ -22,7 +22,7 @@ api_list = {
 	createuser: '/rest/users'
 };
 
-quick_admin_info = 'admin:00cog7@!';
+quick_admin_info = 'admin:admin';
 logininfo_id = "admin";
 logininfo_passwd = "admin";
 

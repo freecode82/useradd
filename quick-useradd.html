@@ -89,21 +89,28 @@
 				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 					console.log(data.value);
 					
-					let xmlParser = new DOMParser();
-					let xmlDoc = xmlParser.parseFromString(data.value, "text/xml");
-					let nodes = xmlDoc.getElementsByTagName("com.pmease.quickbuild.model.Group");
+					Object.keys(JSON.parse(data.value)).forEach((value, _) => {
+						var objOption = document.createElement("option");
+						objOption.text = value;
+    					objOption.value = rightlist.length+1;
+    					selRight.options.add(objOption);
+					})
+					
+					//let xmlParser = new DOMParser();
+					//let xmlDoc = xmlParser.parseFromString(data.value, "text/xml");
+					//let nodes = xmlDoc.getElementsByTagName("com.pmease.quickbuild.model.Group");
 					//let names = xmlDoc.querySelectorAll("#com.pmease.quickbuild.model.Group name");
 					//console.log(names);
 					//names.forEach(na => {
 					//	console.log(na);
 					//console.log(nodes.length);
 					//})
-					for(let subj of nodes) {
-						var objOption = document.createElement("option");
-						objOption.text = subj.getElementsByTagName("name")[0].childNodes[0].nodeValue;
-    					objOption.value = rightlist.length+1;
-    					selRight.options.add(objOption);
-					}
+					//for(let subj of nodes) {
+					//	var objOption = document.createElement("option");
+					//	objOption.text = subj.getElementsByTagName("name")[0].childNodes[0].nodeValue;
+    				//	objOption.value = rightlist.length+1;
+    				//	selRight.options.add(objOption);
+					//}
 				});
 				
 				rightlist.style.display = '';
@@ -124,16 +131,12 @@
 				}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 					console.log(data.value);
 					
-					let xmlParser = new DOMParser();
-					let xmlDoc = xmlParser.parseFromString(data.value, "text/xml");
-					let nodes = xmlDoc.getElementsByTagName("com.pmease.quickbuild.model.Group");
-
-					for(let subj of nodes) {
+					Object.keys(JSON.parse(data.value)).forEach((value, _) => {
 						var objOption = document.createElement("option");
-						objOption.text = subj.getElementsByTagName("name")[0].childNodes[0].nodeValue;
+						objOption.text = value;
     					objOption.value = rightlist.length+1;
     					selRight.options.add(objOption);
-					}
+					})
 				});
 				
 				rightlist.style.display = '';

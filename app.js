@@ -228,7 +228,7 @@ app.post('/getgroup', jsonParser, (request, response) => {
 			})
 			console.log(groupInfo);
 		});
-		response.send(body);
+		response.send(groupInfo);
 	});
 });
 

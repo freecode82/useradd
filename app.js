@@ -6,6 +6,9 @@ const xml2js = require('xml2js');
 const builder = new xml2js.Builder();
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
+const k8s = require('@kubernetes/client-node');
+const k8scls = require('./getclusterinfo');
+
 const path = require('path');
 const dir = path.join(__dirname,'');
 
@@ -494,6 +497,105 @@ app.post('/checkuser', jsonParser, (request, response) => {
 			}
 		});
 	});
+});
+
+
+app.get('/changek8s', (request, response) => {
+	if (request.session.user) {
+		fs.readFile('changek8s.html', (err, data) => {
+			response.send(data.toString());
+		});
+	} else {
+		console.log("로그인 하지 않은 접근입니다.");
+		response.redirect("/");
+	}
+});
+
+
+app.post('/getcluster', jsonParser, async (request, response) => {
+	if (!request.session.user) {
+		console.log("로그인 하지 않은 접근 입니다.")
+		response.redirect("/");
+	}
+	
+	console.log(request.body);
+	const kubeconfig = new k8s.KubeConfig();
+	kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(request.body.type)));
+	const coreApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
+	//const namespace = "default";
+	//const { body:podList} = await coreApi.listNamespacedPod(namespace);
+	const { body } = await coreApi.listNamespace();
+	const namespaces = body.items.map((item) => item.metadata.name);
+	console.log(namespaces);
+	
+	//for(const pod of podList.items) {
+	//	const podName = pod.metadata.name;
+	//	console.log(podName);
+	//}
+	
+	response.send(namespaces);
+});
+
+// Kubernetes 객체 목록 가져오기 엔드포인트
+app.post('/list', jsonParser, async (req, res) => {
+  console.log(req.body);
+  let type = req.body.type;
+  let namespace = req.body.namespace;
+  let objectType = req.body.objectType;
+
+  try {
+    // Kubernetes 클러스터 구성 정보
+    const kubeconfig = new k8s.KubeConfig();
+    kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(type)));
+    const k8sApi = kubeconfig.makeApiClient(k8s.AppsV1Api);
+
+    let listFunction;
+    let objectList = [];
+
+    switch (objectType) {
+      case 'StatefulSet':
+        const { body2 } = await k8sApi.listNamespacedStatefulSet(namespace);
+		console.log(body2);
+		console.log(body2.items);
+		let objectList = body2.items.map((item) => item.metadata.name);
+		console.log(objectList);
+        break;
+      case 'Deployment':
+        const { body } = await k8sApi.listNamespacedDeployment(namespace);
+		console.log(body);
+		console.log(body.items);
+		let objectList2 = body.items.map((item) => item.metadata.name);
+		console.log(objectList2);
+        break;
+      case 'ReplicaSet':
+        const { body3 } = await k8sApi.listNamespacedReplicaSet(namespace);
+		let objectList3 = body3.items.map((item) => item.metadata.name);
+		console.log(objectList3);
+        break;
+      case 'DaemonSet':
+        const { body4 } = await k8sApi.listNamespacedDaemonSet(namespace);
+		let objectList4 = body4.items.map((item) => item.metadata.name);
+		console.log(objectList4);
+        break;
+      case 'Pod':
+        const { body5 } = await kubeconfig.makeApiClient(k8s.CoreV1Api).listNamespacedPod(namespace);
+		console.log(body5);
+		let objectList5 = body5.items.map((item) => item.metadata.name);
+		console.log(objectList5);
+        break;
+      default:
+        throw new Error('Invalid object type');
+    }
+
+	//console.log(listFunction);
+    //const  result  = await listFunction;
+    //objectList = body.items.map((item) => item.metadata.name);
+	//console.log(objectList);
+	
+	 res.send(objectList);
+  } catch(e) {
+	  console.log(e);
+  }
 });
 
 app.listen(3005, () => {

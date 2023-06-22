@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>changek8s</title>
+</head>
+
+<body>
+	클러스터를 선택하세요<br><br>
+		<label>Select Cluster</label>
+		<select name="cluster" id="cluster">
+			<option value="NONE">NONE</option>
+			<option value="MY">MY</option>
+		</select>
+		<P>
+		네임스페이스를 선택하세요<br><br>
+		<label>Namespace</label>
+		<select name="namespace" id="namespace">
+		</select>
+		</P>
+		 <div class="container">
+			<a href="#" onclick="makeList(this);" id="StatefulSet" class="btn-gradient cyan large">STATEFULSET</a>&nbsp;&nbsp;&nbsp;   
+			<a href="#" onclick="makeList(this);" id="ReplicaSet" class="btn-gradient orange large">REPLICASET</a>&nbsp;&nbsp;&nbsp;   
+			<a href="#" onclick="makeList(this);" id="Deployment" class="btn-gradient orange large">DEPLOYMENT</a>&nbsp;&nbsp;&nbsp;   
+			<a href="#" onclick="makeList(this);" id="Pod" class="btn-gradient orange large">POD</a>&nbsp;&nbsp;&nbsp;   
+			<a href="#" onclick="makeList(this);" id="DaemonSet" class="btn-gradient orange large">DAEMONSET</a>&nbsp;&nbsp;&nbsp;   
+		</div> 
+	<p>
+	라벨<input type="button" class="littleButton" value="+" id="plsLabel">
+	</p>
+	<div id="labelform">
+	</div>
+	<p>
+	어노테이션<input type="button" class="littleButton" value="+" id="plsAnnotaion">
+	</p>
+	<div id="annotationform">
+	</div>
+	<p>
+	<div id="list">
+		<select multiple id="sel-list"></select>
+	</div>
+	</p>
+	<input type="button" class="myButton" value="Apply" id="applyButton" onclick=""><br>
+	<p></p>
+	<div id="log">
+	logs<input type="button" class="littleButton" value="Clear log" id='logButton' onclick='logdelete()'><br><br><br>
+	<textarea id='logs' cols='125' rows='20'></textarea>
+	</div>
+	
+	<script>
+		const selCluster = document.getElementById('cluster');
+		const names = document.getElementById('namespace');
+
+		selCluster.addEventListener('change', e => {
+			if(e.target.value.indexOf('NONE') < 0) {
+				console.log(e.target.value);
+				fetch('/getcluster', {
+						method: 'POST',
+						headers: {'Content-Type':'application/json'},
+						body: JSON.stringify({type: e.target.value}),
+					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+						console.log(Object.values(JSON.parse(data.value)));
+						names.options.length = 0;
+
+						Object.values(JSON.parse(data.value)).forEach((value, _) => {
+							var objOption = document.createElement("option");
+							objOption.text = value;
+							objOption.value = names.length+1;
+							names.options.add(objOption);
+						})
+					});
+			} else {
+				names.options.length = 0;
+			}
+		});
+		
+		function makeList(e) {
+			console.log(e.id);
+			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.text);
+			const ns = [...names.options].filter(option => option.selected).map(option => option.text);
+			
+			fetch('/list', {
+						method: 'POST',
+						headers: {'Content-Type':'application/json'},
+						body: JSON.stringify({type: cls[0], namespace: ns[0], objectType: e.id}),
+					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+						console.log(Object.values(JSON.parse(data.value)));
+			});
+		}
+	</script>
+</body>
+</html>

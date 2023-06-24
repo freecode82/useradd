@@ -3,53 +3,141 @@
 <head>
 <meta charset="utf-8">
 <title>changek8s</title>
+	<style>
+		.littleButton {
+			box-shadow:inset 0px 0px 14px -3px #f2fadc;
+			background:linear-gradient(to bottom, #dbe6c4 5%, #9ba892 100%);
+			background-color:#dbe6c4;
+			border-radius:6px;
+			border:1px solid #b2b8ad;
+			display:inline-block;
+			cursor:pointer;
+			color:#757d6f;
+			font-family:Arial;
+			font-size:15px;
+			font-weight:bold;
+			padding:3px 12px;
+			text-decoration:none;
+			text-shadow:0px 1px 0px #ced9bf;
+		}
+		.littleButton:hover {
+			background:linear-gradient(to bottom, #9ba892 5%, #dbe6c4 100%);
+			background-color:#9ba892;
+		}
+		.littleButton:active {
+			position:relative;
+			top:1px;
+		}
+		
+		.container {
+  			display: flex;
+  			align-items: center;
+  			min-height: 100px;
+			padding-top: 30px;
+  			font-weight: 300;
+		} 
+		a:link, a:visited {
+			 background-color: #FFA500;
+			 color: maroon;
+			 padding: 15px 25px;
+			 text-align: center;
+			 text-decoration: none;
+			 display: inline-block;
+		}
+ 		a:hover, a:active {
+     		background-color: #FF4500;
+		}
+		
+		table {
+			border-top: 1px solid #444444;
+			border-collapse: collapse;
+		}
+  		th, td {
+    		border-bottom: 1px solid #444444;
+    		padding: 10px;
+  		}
+	</style>
 </head>
 
 <body>
-	클러스터를 선택하세요<br><br>
-		<label>Select Cluster</label>
-		<select name="cluster" id="cluster">
-			<option value="NONE">NONE</option>
-			<option value="MY">MY</option>
-		</select>
+		<ul>
+			<li>클러스터를 선택하세요
+			<label>Select Cluster</label>
+			<select name="cluster" id="cluster" style="font-size:15px;">
+				<option value="NONE">NONE</option>
+				<option value="MY">MY5</option>
+			</select>
+			</li>
+		</ul>
+		
 		<P>
-		네임스페이스를 선택하세요<br><br>
-		<label>Namespace</label>
-		<select name="namespace" id="namespace">
-		</select>
+		<div id="namespace-div">
+			<ul>
+				<li>네임스페이스를 선택하세요
+				<label>Namespace</label>
+				<select name="namespace" id="namespace" style="font-size:16px;">
+				</select>
+				</li>
+			</ul>
+		</div>
 		</P>
-		 <div class="container">
+		<div class="container">
 			<a href="#" onclick="makeList(this);" id="StatefulSet" class="btn-gradient cyan large">STATEFULSET</a>&nbsp;&nbsp;&nbsp;   
 			<a href="#" onclick="makeList(this);" id="ReplicaSet" class="btn-gradient orange large">REPLICASET</a>&nbsp;&nbsp;&nbsp;   
 			<a href="#" onclick="makeList(this);" id="Deployment" class="btn-gradient orange large">DEPLOYMENT</a>&nbsp;&nbsp;&nbsp;   
 			<a href="#" onclick="makeList(this);" id="Pod" class="btn-gradient orange large">POD</a>&nbsp;&nbsp;&nbsp;   
 			<a href="#" onclick="makeList(this);" id="DaemonSet" class="btn-gradient orange large">DAEMONSET</a>&nbsp;&nbsp;&nbsp;   
-		</div> 
+	    </div> 
 	<p>
-	라벨<input type="button" class="littleButton" value="+" id="plsLabel">
+	<table border="1">
+  	<tbody>
+    <tr>
+      <td width="500">
+		  <p>
+		  라벨<input type="button" class="littleButton" value="+" id="plsLabel">
+		  </p>
+		  <div id="labelform">
+		  </div>
+	   </td>
+	  <td width="500">
+		  <p>
+		  어노테이션<input type="button" class="littleButton" value="+" id="plsAnnotation">
+	      </p>
+	      <div id="annotationform">
+	      </div>
+	  </td>
+    </tr>
+  	</tbody>
+	</table>
 	</p>
-	<div id="labelform">
-	</div>
-	<p>
-	어노테이션<input type="button" class="littleButton" value="+" id="plsAnnotaion">
-	</p>
-	<div id="annotationform">
-	</div>
 	<p>
 	<div id="list">
-		<select multiple id="sel-list"></select>
+		<label id="info"></label><br><br>
+		<select multiple id="sel-list" style="width:1000px;font-size:15px;"></select><br>
+		<input type="button" class="myButton" value="Apply" id="applyButton" onclick="apply();">&nbsp;&nbsp;&nbsp;<input type="button" class="myButton" value="Delete" id="deleteButton">
 	</div>
 	</p>
-	<input type="button" class="myButton" value="Apply" id="applyButton" onclick=""><br>
-	<p></p>
 	<div id="log">
-	logs<input type="button" class="littleButton" value="Clear log" id='logButton' onclick='logdelete()'><br><br><br>
-	<textarea id='logs' cols='125' rows='20'></textarea>
+	logs<br><br>
+	<textarea id='logs' cols='125' rows='20'></textarea><br>
+	<input type="button" class="littleButton" value="Clear log" id='logButton' onclick='logdelete()'>
 	</div>
 	
 	<script>
 		const selCluster = document.getElementById('cluster');
 		const names = document.getElementById('namespace');
+		const list = document.getElementById('list');
+		const resList = document.getElementById('sel-list');
+		const nsDiv = document.getElementById('namespace-div');
+		const logarea = document.getElementById('logs');
+		const infoLabel = document.getElementById('info');
+		const appyBtn = document.getElementById('applyButton');
+		const delBtn = document.getElementById('deleteButton');
+		
+		list.style.display = 'none';
+		nsDiv.style.display = 'none';
+		let cnt = 0;
+		let selectedObjectType = null;
 
 		selCluster.addEventListener('change', e => {
 			if(e.target.value.indexOf('NONE') < 0) {
@@ -59,33 +147,158 @@
 						headers: {'Content-Type':'application/json'},
 						body: JSON.stringify({type: e.target.value}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
-						console.log(Object.values(JSON.parse(data.value)));
+						//console.log(Object.values(JSON.parse(data.value)));
 						names.options.length = 0;
 
 						Object.values(JSON.parse(data.value)).forEach((value, _) => {
-							var objOption = document.createElement("option");
+							let objOption = document.createElement("option");
 							objOption.text = value;
 							objOption.value = names.length+1;
 							names.options.add(objOption);
 						})
+						nsDiv.style.display = '';
 					});
 			} else {
 				names.options.length = 0;
+				nsDiv.style.display = 'none';
+				infoLabel.innerText = '';
 			}
 		});
 		
 		function makeList(e) {
-			console.log(e.id);
-			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.text);
+			//console.log(e.id);
+			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.value);
 			const ns = [...names.options].filter(option => option.selected).map(option => option.text);
+			resList.options.length = 0;
+			let listcnt = 0;
+			
+			if (cls.length == 0 || ns.length == 0) {
+					alert("선택된 클러스터가 없습니다.");
+					return;
+			}
+			
+			selectedObjectType = e.id;	
 			
 			fetch('/list', {
 						method: 'POST',
 						headers: {'Content-Type':'application/json'},
 						body: JSON.stringify({type: cls[0], namespace: ns[0], objectType: e.id}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
-						console.log(Object.values(JSON.parse(data.value)));
+						//console.log(Object.values(JSON.parse(data.value)));
+						Object.values(JSON.parse(data.value)).forEach((value, _) => {
+							let objOption = document.createElement("option");
+							objOption.text = value;
+							objOption.value = resList.length+1;
+							resList.options.add(objOption);
+							listcnt++;
+						});
+				
+						if (listcnt == 0) {
+							list.style.display = 'none';
+							logarea.value += "\n조회 값이 없습니다."
+						} else if (cnt < 20) {
+							resList.size = 20;
+							list.style.display = '';
+						} else {
+							resList.size = listcnt / 3;
+							list.style.display = '';
+						}
 			});
+			infoLabel.innerText = `${e.id} LIST`;
+		}
+		
+		
+		plsLabel.onclick = () => {
+				const labelForm = document.getElementById('labelform');
+				const newLabel = document.createElement('div');
+				newLabel.id = "user" + cnt;
+				newLabel.className = 'labelinfo';
+				newLabel.innerHTML = `<label>key:</label>&nbsp;<input type='text' id='key${cnt}' class='key'>
+									 <label>value:</label>&nbsp;<input type='text' id='val${cnt}' class='val'>
+									 <input type='button' class='littleButton' value='-' id='delLabel' onclick='removeLabel(this)'><br>`;
+				labelForm.appendChild(newLabel);
+				cnt++;
+			}
+		
+		plsAnnotation.onclick = () => {
+				const annotationForm = document.getElementById('annotationform');
+				const newAnnotation = document.createElement('div');
+				newAnnotation.id = "user" + cnt;
+				newAnnotation.className = 'annotationinfo';
+				newAnnotation.innerHTML = `<label>key:</label>&nbsp;<input type='text' id='key${cnt}' class='key'>
+									 <label>value:</label>&nbsp;<input type='text' id='val${cnt}' class='val'>
+									 <input type='button' class='littleButton' value='-' id='delAnnotation' onclick='removeAnnotation(this)'><br>`;
+				annotationForm.appendChild(newAnnotation);
+				cnt++;
+			}
+		
+		function apply() {
+			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.value);
+			const ns = [...names.options].filter(option => option.selected).map(option => option.text);
+			let ojtType = selectedObjectType; //선택된 자원 타입
+			let ojtName = [...resList.options].filter(option => option.selected).map(option => option.text); //선택된 자원명
+			
+			if (cls.length == 0 || ns.length == 0 || ojtName.length == 0 || ojtType == null) {
+					alert("선택된 클러스터가 없습니다.");
+					return;
+			}
+			
+			let allLabel = document.getElementsByClassName("labelinfo");
+			let allAnnotation = document.getElementsByClassName("annotationinfo");
+			let labelsInfo = [];
+			let annotationsInfo = [];
+			
+			
+			for(let label of allLabel) {
+				labelsInfo.push({ 
+					labelKey: label.getElementsByClassName("key")[0].value,
+					labelValue: label.getElementsByClassName("val")[0].value
+				});
+			}
+			
+			for(let anno of allAnnotation) {	
+				annotationsInfo.push({
+					annotationKey: anno.getElementsByClassName("key")[0].value,
+					annotationValue: anno.getElementsByClassName("val")[0].value
+				});
+			}
+			
+			
+			for(let i of ojtName) {
+				let makeInfo = [];
+				makeInfo.push({ cluster: cls[0] });
+				makeInfo.push({ namespace: ns[0] });
+				makeInfo.push({ objectType: ojtType });
+				makeInfo.push({ objectName: i });
+				makeInfo.push({ labels: labelsInfo });
+				makeInfo.push({ annotations: annotationsInfo });
+				
+				console.log(makeInfo);
+				fetch('/apply', {
+						method: 'POST',
+						headers: {'Content-Type':'application/json'},
+						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo}),
+					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+						console.log(Object.values(JSON.parse(data.value)));
+				});
+			}
+			
+		}
+		
+		function del() {
+			
+		}
+		
+		function logdelete() {
+			logarea.value = '';
+		}
+		
+		function removeLabel(e) {
+			document.getElementById('labelform').removeChild(e.parentNode);
+		}
+		
+		function removeAnnotation(e) {
+			document.getElementById('annotationform').removeChild(e.parentNode);
 		}
 	</script>
 </body>

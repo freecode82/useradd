@@ -544,59 +544,267 @@ app.post('/list', jsonParser, async (req, res) => {
   let objectType = req.body.objectType;
 
   try {
-    // Kubernetes 클러스터 구성 정보
     const kubeconfig = new k8s.KubeConfig();
     kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(type)));
     const k8sApi = kubeconfig.makeApiClient(k8s.AppsV1Api);
 
-    let listFunction;
     let objectList = [];
+	let result = null;
 
     switch (objectType) {
       case 'StatefulSet':
-        const { body2 } = await k8sApi.listNamespacedStatefulSet(namespace);
-		console.log(body2);
-		console.log(body2.items);
-		let objectList = body2.items.map((item) => item.metadata.name);
-		console.log(objectList);
+        result = await k8sApi.listNamespacedStatefulSet(namespace);
         break;
       case 'Deployment':
-        const { body } = await k8sApi.listNamespacedDeployment(namespace);
-		console.log(body);
-		console.log(body.items);
-		let objectList2 = body.items.map((item) => item.metadata.name);
-		console.log(objectList2);
+        result = await k8sApi.listNamespacedDeployment(namespace);
         break;
       case 'ReplicaSet':
-        const { body3 } = await k8sApi.listNamespacedReplicaSet(namespace);
-		let objectList3 = body3.items.map((item) => item.metadata.name);
-		console.log(objectList3);
+        result = await k8sApi.listNamespacedReplicaSet(namespace);
         break;
       case 'DaemonSet':
-        const { body4 } = await k8sApi.listNamespacedDaemonSet(namespace);
-		let objectList4 = body4.items.map((item) => item.metadata.name);
-		console.log(objectList4);
+        result = await k8sApi.listNamespacedDaemonSet(namespace);
         break;
       case 'Pod':
-        const { body5 } = await kubeconfig.makeApiClient(k8s.CoreV1Api).listNamespacedPod(namespace);
-		console.log(body5);
-		let objectList5 = body5.items.map((item) => item.metadata.name);
-		console.log(objectList5);
+        result = await kubeconfig.makeApiClient(k8s.CoreV1Api).listNamespacedPod(namespace);
         break;
       default:
         throw new Error('Invalid object type');
     }
-
-	//console.log(listFunction);
-    //const  result  = await listFunction;
-    //objectList = body.items.map((item) => item.metadata.name);
-	//console.log(objectList);
-	
-	 res.send(objectList);
+	  
+	 if (objectType != 'Pod') {
+		 const { body } = result;
+		 objectList = body.items.map((item) => item.metadata.name);
+		 console.log(objectList);
+		 
+		 res.send(objectList);
+	 } else {
+		 const { body: podList } = result;
+		 objectList = podList.items.map( (item) => item.metadata.name);
+		 console.log(objectList);
+		 
+		 res.send(objectList);
+	 }
+	 
   } catch(e) {
 	  console.log(e);
   }
 });
+
+
+app.post('/apply', jsonParser, async (req, res) => {
+  const { cluster, namespace, objectType, objectName, labels, annotations } = req.body;
+  console.log(req.body);
+
+  const kubeconfig = new k8s.KubeConfig();
+  kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(cluster)));
+  const k8sApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
+  const k8sAppsApi = kubeconfig.makeApiClient(k8s.AppsV1Api);
+  //const k8sExtensionsApi = kubeconfig.makeApiClient(k8s.ExtensionsV1beta1Api);
+
+  
+  try {
+    switch (objectType) {
+      case 'StatefulSet':
+        async function applyLabelAndAnnotationToStatefulSet(objectName, namespace, labels, annotations) {
+			  const { body } = await k8sAppsApi.readNamespacedStatefulSet(objectName, namespace);
+			  //console.log(body);
+			
+			  if (!body.metadata.labels) {
+				body.metadata.labels = {};
+			  }
+			
+			  for(let lab of labels) {
+				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  }
+
+			  
+			  if (!body.metadata.annotations) {
+				body.metadata.annotations = {};
+			  }
+			
+			  for(let ann of annotations) {
+				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+			  }
+
+			  await k8sAppsApi.replaceNamespacedStatefulSet(objectName, namespace, body);
+		}
+		await applyLabelAndAnnotationToStatefulSet(objectName, namespace, labels, annotations);
+        break;
+			
+      case 'Deployment':
+        async function applyLabelAndAnnotationToDeployment(objectName, namespace, labels, annotations) {
+			  const { body } = await k8sAppsApi.readNamespacedDeployment(objectName, namespace);
+			  //console.log(body);
+			
+			  if (!body.metadata.labels) {
+				body.metadata.labels = {};
+			  }
+
+			  for(let lab of labels) {
+				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  }
+
+
+			  if (!body.metadata.annotations) {
+				body.metadata.annotations = {};
+			  }
+
+			  for(let ann of annotations) {
+				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+			  }
+
+			  await k8sAppsApi.replaceNamespacedDeployment(objectName, namespace, body);
+		}
+		await applyLabelAndAnnotationToDeployment(objectName, namespace, labels, annotations);
+        break;
+			
+      case 'ReplicaSet':
+        async function applyLabelAndAnnotationToReplicaSet(objectName, namespace, labels, annotations) {
+			  const { body } = await k8sAppsApi.readNamespacedReplicaSet(objectName, namespace);
+			  //console.log(body.metadata.labels);
+			
+			  if (!body.metadata.labels) {
+				body.metadata.labels = {};
+			  }
+
+			  for(let lab of labels) {
+				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  }
+
+			  if (!body.metadata.annotations) {
+				body.metadata.annotations = {};
+			  }
+
+			  for(let ann of annotations) {
+				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+			  }
+
+			  await k8sAppsApi.replaceNamespacedReplicaSet(objectName, namespace, body);
+		}
+		await applyLabelAndAnnotationToReplicaSet(objectName, namespace, labels, annotations);
+		break;
+			
+	  case 'DaemonSet':
+        async function applyLabelAndAnnotationToDaemonSet(objectName, namespace, labels, annotations) {
+			  const { body } = await k8sAppsApi.readNamespacedDaemonSet(resourceName, namespace);
+			  console.log(body.metadata.labels);
+			
+			  if (!body.metadata.labels) {
+				body.metadata.labels = {};
+			  }
+
+			  for(let lab of labels) {
+				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  }
+
+			  if (!body.metadata.annotations) {
+				body.metadata.annotations = {};
+			  }
+
+			  for(let ann of annotations) {
+				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+			  }
+
+			  await k8sAppsApi.replaceNamespacedDaemonSet(objectName, namespace, body);
+		}
+		await applyLabelAndAnnotationToDaemonSet(objectName, namespace, labels, annotations);
+		break;
+			
+	  case 'Pod':
+        async function applyLabelAndAnnotationToPod(objectName, namespace, labels, annotations) {
+			  const { body } = await k8sApi.readNamespacedPod(objectName, namespace);
+			  //console.log(body);
+
+			  if (!body.metadata.labels) {
+				body.metadata.labels = {};
+			  }
+
+			  for(let lab of labels) {
+				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  }
+
+			  if (!body.metadata.annotations) {
+				body.metadata.annotations = {};
+			  }
+
+			  for(let ann of annotations) {
+				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+			  }
+
+			  await k8sApi.replaceNamespacedPod(objectName, namespace, body);
+		}
+		await applyLabelAndAnnotationToPod(objectName, namespace, labels, annotations);
+		break;
+			
+	   default:
+			throw new Error('Invalid object type');
+	    }
+	} catch(e) {
+		console.log(e);
+	}
+});
+
+
+//path type : replace, add
+app.post('/change', jsonParser, async (req, res) => {
+	const { cluster, namespace, objectType, objectName, labels, annotations } = req.body;
+	console.log(req.body);
+
+	try {
+		const kubeconfig = new k8s.KubeConfig();
+		kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(cluster)));
+		const coreApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
+		const k8sApi = kubeconfig.makeApiClient(k8s.AppsV1Api);
+		const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
+
+		let response;
+		let objectTypePlural;
+		let patch = [];
+		
+		for(let lab of labels) {
+			let tmp = {};
+			tmp[lab.labelKey] = lab.labelValue;
+			patch.push({ op: 'replace', path: '/metadata/labels', value: tmp });
+		}
+				
+		for(let ann of annotations) {
+			let tmp = {};
+			tmp[ann.annotationKey] = ann.annotationValue;
+			patch.push({ op: 'replace', path: '/metadata/annotations', value: tmp });
+		}
+		
+		console.log(patch);
+
+		switch (objectType) {
+		  case 'StatefulSet':
+			response = await k8sApi.patchNamespacedStatefulSet(objectName, namespace, patch, undefined, undefined, undefined, undefined, undefined, options);
+			break;
+
+		  case 'Deployment':
+			response = await k8sApi.patchNamespacedDeployment(objectName, namespace, patch, undefined, undefined, undefined, undefined, undefined, options);
+			break;
+
+		  case 'ReplicaSet':
+			response = await k8sApi.patchNamespacedReplicaSet(objectName, namespace, patch, undefined, undefined, undefined, undefined, undefined, options);
+			break;
+
+		  case 'DaemonSet':
+			response = await k8sApi.patchNamespacedDaemonSet(objectName, namespace, patch, undefined, undefined, undefined, undefined, undefined, options);
+			break;
+
+		  case 'Pod':
+			const coreApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
+			response = await coreApi.patchNamespacedPod(objectName, namespace, patch, undefined, undefined, undefined, undefined, undefined, options);
+			break;
+
+		  default:
+			throw new Error('Invalid object type');
+	    }
+	} catch(e) {
+		console.log(e);
+	}
+});
+	
 
 app.listen(3005, () => {
 	console.log('server start');

@@ -114,7 +114,7 @@
 	<div id="list">
 		<label id="info"></label><br><br>
 		<select multiple id="sel-list" style="width:1000px;font-size:15px;"></select><br>
-		<input type="button" class="myButton" value="Apply" id="applyButton" onclick="apply();">&nbsp;&nbsp;&nbsp;<input type="button" class="myButton" value="Delete" id="deleteButton">
+		<input type="button" class="myButton" value="Apply" id="applyButton" onclick="add();">&nbsp;&nbsp;&nbsp;<input type="button" class="myButton" value="Delete" id="deleteButton" onClick="del();">
 	</div>
 	</p>
 	<div id="log">
@@ -161,6 +161,8 @@
 			} else {
 				names.options.length = 0;
 				nsDiv.style.display = 'none';
+				resList.options.length = 0;
+				list.style.display = 'none';
 				infoLabel.innerText = '';
 			}
 		});
@@ -172,8 +174,13 @@
 			resList.options.length = 0;
 			let listcnt = 0;
 			
-			if (cls.length == 0 || ns.length == 0) {
+			if (cls.length == 0) {
 					alert("선택된 클러스터가 없습니다.");
+					return;
+			}
+			
+			if (ns.length == 0) {
+					alert("선택된 네임스페이스가 없습니다.");
 					return;
 			}
 			
@@ -232,19 +239,40 @@
 				cnt++;
 			}
 		
-		function apply() {
+		function add() {
 			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.value);
 			const ns = [...names.options].filter(option => option.selected).map(option => option.text);
 			let ojtType = selectedObjectType; //선택된 자원 타입
 			let ojtName = [...resList.options].filter(option => option.selected).map(option => option.text); //선택된 자원명
 			
-			if (cls.length == 0 || ns.length == 0 || ojtName.length == 0 || ojtType == null) {
+			if (cls.length == 0) {
 					alert("선택된 클러스터가 없습니다.");
+					return;
+			}
+			
+			if (ns.length == 0) {
+					alert("선택된 네임스페이스가 없습니다.");
+					return;
+			}
+			
+			if (ojtType == null) {
+					alert("타입이 없습니다.(ds, rs, sts, deploy, pod 중 하나)");
+					return;
+			}
+			
+			if (ojtName.length == 0) {
+					alert("작업할 대상이 없습니다.");
 					return;
 			}
 			
 			let allLabel = document.getElementsByClassName("labelinfo");
 			let allAnnotation = document.getElementsByClassName("annotationinfo");
+			
+			if (allLabel.length == 0 && allAnnotation.length == 0) {
+				alert("라벨과 어노테이션 둘 중에 하나라도 있어야 합니다.")
+				return;
+			}
+			
 			let labelsInfo = [];
 			let annotationsInfo = [];
 			
@@ -265,28 +293,80 @@
 			
 			
 			for(let i of ojtName) {
-				let makeInfo = [];
-				makeInfo.push({ cluster: cls[0] });
-				makeInfo.push({ namespace: ns[0] });
-				makeInfo.push({ objectType: ojtType });
-				makeInfo.push({ objectName: i });
-				makeInfo.push({ labels: labelsInfo });
-				makeInfo.push({ annotations: annotationsInfo });
-				
-				console.log(makeInfo);
 				fetch('/apply', {
 						method: 'POST',
 						headers: {'Content-Type':'application/json'},
-						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo}),
+						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo, oper: 'add'}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 						console.log(Object.values(JSON.parse(data.value)));
 				});
 			}
-			
 		}
 		
 		function del() {
+			const cls = [...selCluster.options].filter(option => option.selected).map(option => option.value);
+			const ns = [...names.options].filter(option => option.selected).map(option => option.text);
+			let ojtType = selectedObjectType; //선택된 자원 타입
+			let ojtName = [...resList.options].filter(option => option.selected).map(option => option.text); //선택된 자원명
 			
+			if (cls.length == 0) {
+					alert("선택된 클러스터가 없습니다.");
+					return;
+			}
+			
+			if (ns.length == 0) {
+					alert("선택된 네임스페이스가 없습니다.");
+					return;
+			}
+			
+			if (ojtType == null) {
+					alert("타입이 없습니다.(ds, rs, sts, deploy, pod 중 하나)");
+					return;
+			}
+			
+			if (ojtName.length == 0) {
+					alert("작업할 대상이 없습니다.");
+					return;
+			}
+			
+			let allLabel = document.getElementsByClassName("labelinfo");
+			let allAnnotation = document.getElementsByClassName("annotationinfo");
+			
+			if (allLabel.length == 0 && allAnnotation.length == 0) {
+				alert("라벨과 어노테이션 둘 중에 하나라도 있어야 합니다.")
+				return;
+			}
+			
+			let labelsInfo = [];
+			let annotationsInfo = [];
+			
+			
+			for(let label of allLabel) {
+				labelsInfo.push({ 
+					labelKey: label.getElementsByClassName("key")[0].value,
+					labelValue: label.getElementsByClassName("val")[0].value
+				});
+			}
+			
+			for(let anno of allAnnotation) {	
+				annotationsInfo.push({
+					annotationKey: anno.getElementsByClassName("key")[0].value,
+					annotationValue: anno.getElementsByClassName("val")[0].value
+				});
+			}
+			
+			
+			for(let i of ojtName) {
+				fetch('/apply', {
+						method: 'POST',
+						headers: {'Content-Type':'application/json'},
+						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo, oper: 'del'}),
+					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
+						//console.log(Object.values(JSON.parse(data.value)));
+						console.log(data);
+						logarea.value += data;
+				});
+			}
 		}
 		
 		function logdelete() {

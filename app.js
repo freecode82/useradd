@@ -592,15 +592,13 @@ app.post('/list', jsonParser, async (req, res) => {
 
 
 app.post('/apply', jsonParser, async (req, res) => {
-  const { cluster, namespace, objectType, objectName, labels, annotations } = req.body;
+  const { cluster, namespace, objectType, objectName, labels, annotations, oper } = req.body;
   console.log(req.body);
 
   const kubeconfig = new k8s.KubeConfig();
   kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(cluster)));
   const k8sApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
   const k8sAppsApi = kubeconfig.makeApiClient(k8s.AppsV1Api);
-  //const k8sExtensionsApi = kubeconfig.makeApiClient(k8s.ExtensionsV1beta1Api);
-
   
   try {
     switch (objectType) {
@@ -609,22 +607,31 @@ app.post('/apply', jsonParser, async (req, res) => {
 			  const { body } = await k8sAppsApi.readNamespacedStatefulSet(objectName, namespace);
 			  //console.log(body);
 			
-			  if (!body.metadata.labels) {
-				body.metadata.labels = {};
-			  }
-			
-			  for(let lab of labels) {
-				  body.metadata.labels[lab.labelKey] = lab.labelValue;
+			  if (oper == 'add') {
+				  if (!body.metadata.labels) {
+					body.metadata.labels = {};
+				  }
+
+				  for(let lab of labels) {
+					  body.metadata.labels[lab.labelKey] = lab.labelValue;
+				  }
+
+				  if (!body.metadata.annotations) {
+					body.metadata.annotations = {};
+				  }
+
+				  for(let ann of annotations) {
+					  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  }
+			  } else {
+				  for(let lab of labels) {
+					  delete body.metadata.labels[lab.labelKey];
+				  }
+				  for(let ann of annotations) {
+					  delete body.metadata.annotations[ann.annotationKey];
+				  }
 			  }
 
-			  
-			  if (!body.metadata.annotations) {
-				body.metadata.annotations = {};
-			  }
-			
-			  for(let ann of annotations) {
-				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
-			  }
 
 			  await k8sAppsApi.replaceNamespacedStatefulSet(objectName, namespace, body);
 		}
@@ -636,22 +643,31 @@ app.post('/apply', jsonParser, async (req, res) => {
 			  const { body } = await k8sAppsApi.readNamespacedDeployment(objectName, namespace);
 			  //console.log(body);
 			
-			  if (!body.metadata.labels) {
-				body.metadata.labels = {};
+			  if (oper == 'add') {
+				  if (!body.metadata.labels) {
+					body.metadata.labels = {};
+				  }
+
+				  for(let lab of labels) {
+					  body.metadata.labels[lab.labelKey] = lab.labelValue;
+				  }
+
+				  if (!body.metadata.annotations) {
+					body.metadata.annotations = {};
+				  }
+
+				  for(let ann of annotations) {
+					  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  }
+			  } else {
+				  for(let lab of labels) {
+					  delete body.metadata.labels[lab.labelKey];
+				  }
+				  for(let ann of annotations) {
+					  delete body.metadata.annotations[ann.annotationKey];
+				  }
 			  }
 
-			  for(let lab of labels) {
-				  body.metadata.labels[lab.labelKey] = lab.labelValue;
-			  }
-
-
-			  if (!body.metadata.annotations) {
-				body.metadata.annotations = {};
-			  }
-
-			  for(let ann of annotations) {
-				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
-			  }
 
 			  await k8sAppsApi.replaceNamespacedDeployment(objectName, namespace, body);
 		}
@@ -663,21 +679,31 @@ app.post('/apply', jsonParser, async (req, res) => {
 			  const { body } = await k8sAppsApi.readNamespacedReplicaSet(objectName, namespace);
 			  //console.log(body.metadata.labels);
 			
-			  if (!body.metadata.labels) {
-				body.metadata.labels = {};
+			  if (oper == 'add') {
+				  if (!body.metadata.labels) {
+					body.metadata.labels = {};
+				  }
+
+				  for(let lab of labels) {
+					  body.metadata.labels[lab.labelKey] = lab.labelValue;
+				  }
+
+				  if (!body.metadata.annotations) {
+					body.metadata.annotations = {};
+				  }
+
+				  for(let ann of annotations) {
+					  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  }
+			  } else {
+				  for(let lab of labels) {
+					  delete body.metadata.labels[lab.labelKey];
+				  }
+				  for(let ann of annotations) {
+					  delete body.metadata.annotations[ann.annotationKey];
+				  }
 			  }
 
-			  for(let lab of labels) {
-				  body.metadata.labels[lab.labelKey] = lab.labelValue;
-			  }
-
-			  if (!body.metadata.annotations) {
-				body.metadata.annotations = {};
-			  }
-
-			  for(let ann of annotations) {
-				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
-			  }
 
 			  await k8sAppsApi.replaceNamespacedReplicaSet(objectName, namespace, body);
 		}
@@ -686,24 +712,34 @@ app.post('/apply', jsonParser, async (req, res) => {
 			
 	  case 'DaemonSet':
         async function applyLabelAndAnnotationToDaemonSet(objectName, namespace, labels, annotations) {
-			  const { body } = await k8sAppsApi.readNamespacedDaemonSet(resourceName, namespace);
+			  const { body } = await k8sAppsApi.readNamespacedDaemonSet(objectName, namespace);
 			  console.log(body.metadata.labels);
 			
-			  if (!body.metadata.labels) {
-				body.metadata.labels = {};
+			  if (oper == 'add') {
+				  if (!body.metadata.labels) {
+					body.metadata.labels = {};
+				  }
+
+				  for(let lab of labels) {
+					  body.metadata.labels[lab.labelKey] = lab.labelValue;
+				  }
+
+				  if (!body.metadata.annotations) {
+					body.metadata.annotations = {};
+				  }
+
+				  for(let ann of annotations) {
+					  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  }
+			  } else {
+				  for(let lab of labels) {
+					  delete body.metadata.labels[lab.labelKey];
+				  }
+				  for(let ann of annotations) {
+					  delete body.metadata.annotations[ann.annotationKey];
+				  }
 			  }
 
-			  for(let lab of labels) {
-				  body.metadata.labels[lab.labelKey] = lab.labelValue;
-			  }
-
-			  if (!body.metadata.annotations) {
-				body.metadata.annotations = {};
-			  }
-
-			  for(let ann of annotations) {
-				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
-			  }
 
 			  await k8sAppsApi.replaceNamespacedDaemonSet(objectName, namespace, body);
 		}
@@ -714,21 +750,29 @@ app.post('/apply', jsonParser, async (req, res) => {
         async function applyLabelAndAnnotationToPod(objectName, namespace, labels, annotations) {
 			  const { body } = await k8sApi.readNamespacedPod(objectName, namespace);
 			  //console.log(body);
+			  if (oper == 'add') {
+				  if (!body.metadata.labels) {
+					body.metadata.labels = {};
+				  }
 
-			  if (!body.metadata.labels) {
-				body.metadata.labels = {};
-			  }
+				  for(let lab of labels) {
+					  body.metadata.labels[lab.labelKey] = lab.labelValue;
+				  }
 
-			  for(let lab of labels) {
-				  body.metadata.labels[lab.labelKey] = lab.labelValue;
-			  }
+				  if (!body.metadata.annotations) {
+					body.metadata.annotations = {};
+				  }
 
-			  if (!body.metadata.annotations) {
-				body.metadata.annotations = {};
-			  }
-
-			  for(let ann of annotations) {
-				  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  for(let ann of annotations) {
+					  body.metadata.annotations[ann.annotationKey] = ann.annotationValue;
+				  }
+			  } else {
+				  for(let lab of labels) {
+					  delete body.metadata.labels[lab.labelKey];
+				  }
+				  for(let ann of annotations) {
+					  delete body.metadata.annotations[ann.annotationKey];
+				  }
 			  }
 
 			  await k8sApi.replaceNamespacedPod(objectName, namespace, body);
@@ -737,10 +781,13 @@ app.post('/apply', jsonParser, async (req, res) => {
 		break;
 			
 	   default:
-			throw new Error('Invalid object type');
+			res.send("Invalid object type")
+			//throw new Error('Invalid object type');
 	    }
+	  res.send("Invalid object type");
 	} catch(e) {
 		console.log(e);
+		res.send(e);
 	}
 });
 

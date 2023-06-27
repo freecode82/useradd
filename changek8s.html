@@ -154,7 +154,7 @@
 							nsDiv.style.display = 'none';
 							logarea.value += "\n" + Object.entries(tmp);
 						} else {
-							Object.values(JSON.parse(data.value)).forEach((value, _) => {
+							Object.values(tmp).forEach((value, _) => {
 								let objOption = document.createElement("option");
 								objOption.text = value;
 								objOption.value = names.length+1;
@@ -202,7 +202,7 @@
 							list.style.display = 'none';
 							logarea.value += "\n" + Object.entries(tmp);
 						} else {
-							Object.values(JSON.parse(data.value)).forEach((value, _) => {
+							Object.values(tmp).forEach((value, _) => {
 								let objOption = document.createElement("option");
 								objOption.text = value;
 								objOption.value = resList.length+1;

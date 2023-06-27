@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const k8s = require('@kubernetes/client-node');
 const k8scls = require('./getclusterinfo');
+const k8sns = require('./getnamespaceinfo'); //getnamespaceinfo.js에 직접 적은 네임스페이스를 사용할때 사용
 
 const path = require('path');
 const dir = path.join(__dirname,'');
@@ -522,18 +523,23 @@ app.post('/getcluster', jsonParser, async (request, response) => {
 	const kubeconfig = new k8s.KubeConfig();
 	kubeconfig.loadFromString(JSON.stringify(k8scls.getClusterInfo(request.body.type)));
 	const coreApi = kubeconfig.makeApiClient(k8s.CoreV1Api);
+	
+	//response.send(k8sns.getnamespaceInfo(request.body.type));
 	//const namespace = "default";
 	//const { body:podList} = await coreApi.listNamespacedPod(namespace);
-	const { body } = await coreApi.listNamespace();
-	const namespaces = body.items.map((item) => item.metadata.name);
-	console.log(namespaces);
-	
+	try {
+		const { body } = await coreApi.listNamespace();
+		const namespaces = body.items.map((item) => item.metadata.name);
+		console.log(namespaces);
+		response.send(namespaces);
+	} catch(e) {
+		console.log(e);
+		response.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
+	}
 	//for(const pod of podList.items) {
 	//	const podName = pod.metadata.name;
 	//	console.log(podName);
 	//}
-	
-	response.send(namespaces);
 });
 
 // Kubernetes 객체 목록 가져오기 엔드포인트
@@ -586,7 +592,8 @@ app.post('/list', jsonParser, async (req, res) => {
 	 }
 	 
   } catch(e) {
-	  console.log(e);
+	  console.log(e.body);
+	  res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
   }
 });
 
@@ -781,13 +788,14 @@ app.post('/apply', jsonParser, async (req, res) => {
 		break;
 			
 	   default:
-			res.send("Invalid object type")
+			res.send({type: 'error', message: 'invalid object type'});
 			//throw new Error('Invalid object type');
 	    }
-	  res.send("Invalid object type");
+	  if (oper == 'add') res.send({type: 'msg', message: objectName + ' add success'});
+	  else res.send({type: 'msg', message: objectName + ' del success'});
 	} catch(e) {
-		console.log(e);
-		res.send(e);
+		console.log(e.body);
+		res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
 	}
 });
 

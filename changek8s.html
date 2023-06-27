@@ -149,14 +149,19 @@
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 						//console.log(Object.values(JSON.parse(data.value)));
 						names.options.length = 0;
-
-						Object.values(JSON.parse(data.value)).forEach((value, _) => {
-							let objOption = document.createElement("option");
-							objOption.text = value;
-							objOption.value = names.length+1;
-							names.options.add(objOption);
-						})
-						nsDiv.style.display = '';
+						let tmp = JSON.parse(data.value);
+						if('type' in tmp) {
+							nsDiv.style.display = 'none';
+							logarea.value += "\n" + Object.entries(tmp);
+						} else {
+							Object.values(JSON.parse(data.value)).forEach((value, _) => {
+								let objOption = document.createElement("option");
+								objOption.text = value;
+								objOption.value = names.length+1;
+								names.options.add(objOption);
+							});
+							nsDiv.style.display = '';
+						}
 					});
 			} else {
 				names.options.length = 0;
@@ -192,24 +197,30 @@
 						body: JSON.stringify({type: cls[0], namespace: ns[0], objectType: e.id}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
 						//console.log(Object.values(JSON.parse(data.value)));
-						Object.values(JSON.parse(data.value)).forEach((value, _) => {
-							let objOption = document.createElement("option");
-							objOption.text = value;
-							objOption.value = resList.length+1;
-							resList.options.add(objOption);
-							listcnt++;
-						});
-				
-						if (listcnt == 0) {
+						let tmp = JSON.parse(data.value);
+						if('type' in tmp) {
 							list.style.display = 'none';
-							logarea.value += "\n조회 값이 없습니다."
-						} else if (cnt < 20) {
-							resList.size = 20;
-							list.style.display = '';
+							logarea.value += "\n" + Object.entries(tmp);
 						} else {
-							resList.size = listcnt / 3;
-							list.style.display = '';
-						}
+							Object.values(JSON.parse(data.value)).forEach((value, _) => {
+								let objOption = document.createElement("option");
+								objOption.text = value;
+								objOption.value = resList.length+1;
+								resList.options.add(objOption);
+								listcnt++;
+							});
+				
+							if (listcnt == 0) {
+								list.style.display = 'none';
+								logarea.value += "\n조회 값이 없습니다."
+							} else if (cnt < 20) {
+								resList.size = 20;
+								list.style.display = '';
+							} else {
+								resList.size = listcnt / 3;
+								list.style.display = '';
+							}
+					}
 			});
 			infoLabel.innerText = `${e.id} LIST`;
 		}
@@ -298,7 +309,8 @@
 						headers: {'Content-Type':'application/json'},
 						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo, oper: 'add'}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
-						console.log(Object.values(JSON.parse(data.value)));
+						//console.log(Object.values(JSON.parse(data.value)));
+						logarea.value += "\n" + Object.entries(JSON.parse(data.value));
 				});
 			}
 		}
@@ -362,9 +374,7 @@
 						headers: {'Content-Type':'application/json'},
 						body: JSON.stringify({cluster: cls[0], namespace: ns[0], objectType: ojtType, objectName: i, labels: labelsInfo, annotations: annotationsInfo, oper: 'del'}),
 					}).then((res) => res.body.pipeThrough(new TextDecoderStream()).getReader().read()).then( (data) => {
-						//console.log(Object.values(JSON.parse(data.value)));
-						console.log(data);
-						logarea.value += data;
+						logarea.value += "\n" + Object.entries(JSON.parse(data.value));
 				});
 			}
 		}

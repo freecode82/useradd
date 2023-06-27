@@ -544,10 +544,10 @@ app.post('/getcluster', jsonParser, async (request, response) => {
 
 // Kubernetes 객체 목록 가져오기 엔드포인트
 app.post('/list', jsonParser, async (req, res) => {
-    if (!request.session.user) {
+    if (!req.session.user) {
           console.log("로그인 하지 않은 접근 입니다.")
           response.redirect("/");
-      }
+    }
 	
     console.log(req.body);
     let type = req.body.type;
@@ -597,6 +597,11 @@ app.post('/list', jsonParser, async (req, res) => {
 
 
 app.post('/apply', jsonParser, async (req, res) => {
+	if (!req.session.user) {
+          console.log("로그인 하지 않은 접근 입니다.")
+          response.redirect("/");
+    }
+	
     const { cluster, namespace, objectType, objectName, labels, annotations, oper } = req.body;
     console.log(req.body);
   
@@ -793,8 +798,9 @@ app.post('/apply', jsonParser, async (req, res) => {
         if (oper == 'add') res.send({type: 'msg', message: objectName + ' add success'});
         else res.send({type: 'msg', message: objectName + ' del success'});
     } catch(e) {
-        console.log(e.body);
-        res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
+		console.log(e);
+		if (e instanceof TypeError) res.send({type: 'error', message: '존재하지 않는 라벨이나 어노테이션을 시도 하였습니다.'});
+		else res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
     }
 });
 

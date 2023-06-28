@@ -590,9 +590,13 @@ app.post('/list', jsonParser, async (req, res) => {
            res.send(objectList);
        }    
     } catch(e) {
-        console.log(e.body);
-        res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
-    }
+        console.log(e);
+		if (e.body == null) {
+			res.send({type: 'error', reason: 'unknown error, please check server log'});
+		} else {
+			res.send({type: 'error', kind: e.body.kind, status: e.body.status, message: e.body.message, reason: e.body.reason, code: e.body.code});
+    	}
+	}    
 });
 
 
